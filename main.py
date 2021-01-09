@@ -97,9 +97,50 @@ def get_boundary_nodes(G):
             nodes_list.append((u,v))
     return nodes_list
 
-
 def get_neighbor_for_internal(x, y):
     return [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x-1, y+1) ,(x+1, y-1), (x-1, y-1), (x+1, y+1)]
+
+def get_neighbor_for_boundary(u, v):
+    if u == 0 and v == 0:
+        return [(0, 1), (1, 1), (1, 0)]
+    elif u == N-1 and v == N - 1:
+        return [(N-2, N-2), (N-1, N-2), (N-2, N-1)]
+    elif u == N-1 and v == 0:
+        return [(u-1, v), (u, v+1), (u-1, v+1)]
+    elif u == 0 and v == N-1:
+        return [(u+1, v), (u+1, v-1), (u, v-1)]
+    elif u == 0:
+        return [(u, v-1), (u, v+1), (u+1, v), (u+1, v-1), (u+1, v+1)]
+    elif u == N-1:
+        return [(u-1, v), (u, v-1), (u, v+1), (u-1, v+1), (u-1, v-1)]
+    elif v == N-1:
+        return [(u, v-1), (u-1, v), (u+1, v), (u-1, v-1), (u+1, v-1)]
+    elif v == 0:
+        return [(u-1, v), (u+1, v), (u, v+1), (u-1, v+1), (u+1, v+1)]
+
+
+def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list):
+    unsatisfied_nodes_list = []
+    t = 3
+    for (u, v) in G.nodes():
+        type_of_this_node = G.nodes[(u, v)]['type']
+        if type_of_this_node == 0:
+            continue
+        else:
+            similar_nodes = 0
+            if (u, v) in internal_nodes_list:
+                neighbors = get_neighbor_for_internal(u,v)
+            elif (u, v) in boundary_nodes_list:
+                neighbors = get_neighbor_for_boundary(u,v)
+
+            for each in neighbors:
+                if G.nodes[each]['type'] == type_of_this_node:
+                    similar_nodes += 1
+
+            if similar_nodes <= t:
+                unsatisfied_nodes_list.append((u,v))
+
+    return unsatisfied_nodes_list
 
 def schelling_model(grid_source):
     numrows = len(grid_source)
@@ -114,9 +155,32 @@ def schelling_model(grid_source):
     # create labels for nodes
     labels = dict((n, G.nodes[n]['type']) for n in G.nodes())
 
+    # group node types according to list
+    type1_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 1]
+    type2_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 2]
+    empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == 0]
 
+    # get boundary and internal noder
+    boundary_nodes_list = get_boundary_nodes(G)
+    internal_nodes_list = list(set(G.nodes()) - set(boundary_nodes_list))
 
+    # make calculations according to threshold
+    # accuracy is based on the number of iterations
+    for i in range(10000):
+        # get list of unsatisfied not list first
+        unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list)
+        make_node_satisfied(unsatisfied_nodes_list, empty_cells)
+
+        type1_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 1]
+        type2_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 2]
+        empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == 0]
+
+    display_graph(G)
 
 if __name__ == '__main__':
-    schelling = Schelling(20)
+    input_file = 'test.csv'
+    2d_grid = load_to_array(input_file)
+
+    # show schelling model based on 2d grid
+    schelling_model
     schelling.display_graph()
