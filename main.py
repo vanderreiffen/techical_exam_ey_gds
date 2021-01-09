@@ -145,7 +145,7 @@ def schelling_model(grid_source, threshold, iterations):
     # make calculations according to threshold
     # accuracy is based on the number of iterations
     logger.info("Starting Calculations")
-    for i in range(iterations):
+    for i in range(int(iterations)):
         # get list of unsatisfied not list first
         unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols)
         logger.info("iteration: {}".format(i))
