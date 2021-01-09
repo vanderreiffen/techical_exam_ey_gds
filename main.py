@@ -11,7 +11,7 @@ def load_to_array(csv_file):
     return np.array(data)
 
 
-def display_graph(G):
+def display_graph(G, grid_title = 'Figure 1'):
     """ Load G (grid) customized it according to data types and displays the plot"""
     # initialize graph
     pos = dict((n, n) for n in G.nodes())
@@ -19,9 +19,9 @@ def display_graph(G):
     labels = dict((n, G.nodes[n]['type']) for n in G.nodes())
 
     # group node types according to list
-    type1_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 1]
-    type2_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 2]
-    empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == 0]
+    type1_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 'x']
+    type2_node_list = [n for (n, d) in G.nodes(data=True) if d['type'] == 'o']
+    empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == ' ']
 
     # draw network and label nodes according to type
     nodes_y = nx.draw_networkx_nodes(G, pos, node_color='yellow', nodelist=type1_node_list)
@@ -30,6 +30,8 @@ def display_graph(G):
 
     nx.draw_networkx_edges(G, pos)
     nx.draw_networkx_labels(G, pos, labels=labels)
+
+    plt.figure(grid_title)
     plt.show()
 
 
@@ -109,16 +111,16 @@ def schelling_model(grid_source, threshold=3):
     # create grid
     G = nx.grid_2d_graph(numrows, numcols)
 
-    for n in G.nodes():
-        G.nodes[n]['type'] = random.randint(0, 2)
+    for i, j in G.nodes():
+        G.nodes[(i, j)]['type'] = grid_source[i][j]
 
     # diagonal edges
-    # for ((x, y), d) in G.nodes(data=True):
-    #     if (u + 1 <= N - 1) and (v + 1 <= N - 1):
-    #         G.add_edge((u, v), (u + 1, v + 1))
-    # for ((u, v), d) in G.nodes(data=True):
-    #     if (u + 1 <= N - 1) and (v - 1 >= 0):
-    #         G.add_edge((u, v), (u + 1, v - 1))
+    for ((x, y), d) in G.nodes(data=True):
+        if (x + 1 <= numcols - 1) and (y + 1 <= numrows - 1):
+            G.add_edge((x, y), (x + 1, y + 1))
+    for ((x, y), d) in G.nodes(data=True):
+        if (x + 1 <= numcols - 1) and (y - 1 >= 0):
+            G.add_edge((x, y), (x + 1, y - 1))
 
     # display initial graph
     display_graph(G)
