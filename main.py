@@ -94,7 +94,7 @@ def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, thre
     """ returns the list of unsatisfied nodes """
     unsatisfied_nodes_list = []
     # set threshold / criteria if the neighboring nodes are within the same type
-    t = threshold
+    t = int(threshold)
     # iterate all nodes
     for (x, y) in G.nodes():
         type_of_this_node = G.nodes[(x, y)]['type']
