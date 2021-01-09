@@ -93,22 +93,30 @@ def make_node_satisfied(G, unsatisfied_nodes_list, empty_cells):
 def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols):
     """ returns the list of unsatisfied nodes """
     unsatisfied_nodes_list = []
+    # set threshold / criteria if the neighboring nodes are within the same type
     t = threshold
+    # iterate all nodes
     for (x, y) in G.nodes():
         type_of_this_node = G.nodes[(x, y)]['type']
-        if type_of_this_node == 0:
+        # if type is empty then do nothing
+        if type_of_this_node == ' ':
             continue
         else:
+            # initiate value of similar nodes to 0
             similar_nodes = 0
+
+            # get the neighboring nodes
             if (x, y) in internal_nodes_list:
                 neighbors = get_neighbor_for_internal(x, y)
             elif (x, y) in boundary_nodes_list:
                 neighbors = get_neighbor_for_boundary(x, y, numrows, numcols)
 
+            # iterate neighbor nodes and check if they are similar with the target node
             for each in neighbors:
                 if G.nodes[each]['type'] == type_of_this_node:
                     similar_nodes += 1
-
+            # check if the number of neighboring nodes is less or equal to the
+            # threshold then append it to the unsatisfied_nodes_list
             if similar_nodes <= t:
                 unsatisfied_nodes_list.append((x, y))
 
@@ -118,16 +126,18 @@ def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, thre
 # item 3
 def schelling_model(grid_source, threshold, iterations):
     """ Shows schelling model """
+    # get max rows and columns from the input grid
     numrows = len(grid_source)
     numcols = len(grid_source[0])
 
     # create grid
     G = nx.grid_2d_graph(numrows, numcols)
 
+    # map nodes to grid
     for i, j in G.nodes():
         G.nodes[(i, j)]['type'] = grid_source[i][j]
 
-    # diagonal edges
+    # add diagonal edges
     for ((x, y), d) in G.nodes(data=True):
         if (x + 1 <= numcols - 1) and (y + 1 <= numrows - 1):
             G.add_edge((x, y), (x + 1, y + 1))
@@ -138,7 +148,7 @@ def schelling_model(grid_source, threshold, iterations):
     # display initial graph
     display_graph(G, 'Initial Grid (Please close to continue)')
 
-    # get boundary and internal noder
+    # get boundary and internal nodes
     boundary_nodes_list = get_boundary_nodes(G, numrows, numcols)
     internal_nodes_list = list(set(G.nodes()) - set(boundary_nodes_list))
 
@@ -146,7 +156,7 @@ def schelling_model(grid_source, threshold, iterations):
     # accuracy is based on the number of iterations
     logger.info("Starting Calculations")
     for i in range(int(iterations)):
-        # get list of unsatisfied not list first
+        # get list of unsatisfied nodes first
         unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols)
         logger.info("iteration: {}".format(i))
         # move an unsatisfied node to an empty cell
