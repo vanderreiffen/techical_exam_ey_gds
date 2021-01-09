@@ -4,6 +4,9 @@ import csv
 import matplotlib.pyplot as plt
 import random
 
+from loguru import logger
+
+
 # item 1 on the exam
 def load_to_array(csv_file):
     """ Loads CSV to array """
@@ -31,7 +34,7 @@ def display_graph(G, grid_title = 'Figure 1'):
     nx.draw_networkx_edges(G, pos)
     nx.draw_networkx_labels(G, pos, labels=labels)
 
-    plt.figure(grid_title)
+    plt.suptitle(grid_title)
     plt.show()
 
 
@@ -44,65 +47,73 @@ def get_boundary_nodes(G, max_row, max_col):
 
 
 def get_neighbor_for_internal(x, y):
-    return [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x-1, y+1) ,(x+1, y-1), (x-1, y-1), (x+1, y+1)]
+    """ returns a list of neighbor nodes within the internal nodes """
+    return [(x-1, y), (x+1, y), (x, y+1), (x, y-1), (x-1, y+1), (x+1, y-1), (x-1, y-1), (x+1, y+1)]
 
 
-def get_neighbor_for_boundary(N, u, v):
-    if u == 0 and v == 0:
+def get_neighbor_for_boundary(x, y, numrows, numcols):
+    """ returns a list of neighbor nodes within the boundary nodes """
+    if x == 0 and y == 0:
         return [(0, 1), (1, 1), (1, 0)]
-    elif u == N-1 and v == N - 1:
-        return [(N-2, N-2), (N-1, N-2), (N-2, N-1)]
-    elif u == N-1 and v == 0:
-        return [(u-1, v), (u, v+1), (u-1, v+1)]
-    elif u == 0 and v == N-1:
-        return [(u+1, v), (u+1, v-1), (u, v-1)]
-    elif u == 0:
-        return [(u, v-1), (u, v+1), (u+1, v), (u+1, v-1), (u+1, v+1)]
-    elif u == N-1:
-        return [(u-1, v), (u, v-1), (u, v+1), (u-1, v+1), (u-1, v-1)]
-    elif v == N-1:
-        return [(u, v-1), (u-1, v), (u+1, v), (u-1, v-1), (u+1, v-1)]
-    elif v == 0:
-        return [(u-1, v), (u+1, v), (u, v+1), (u-1, v+1), (u+1, v+1)]
+    elif x == numcols-1 and y == numrows - 1:
+        return [(numrows-2, numcols-2), (numrows-1, numcols-2), (numrows-2, numcols-1)]
+    elif x == numcols-1 and y == 0:
+        return [(x-1, y), (x, y+1), (x-1, y+1)]
+    elif x == 0 and y == numrows-1:
+        return [(x+1, y), (x+1, y-1), (x, y-1)]
+    elif x == 0:
+        return [(x, y-1), (x, y+1), (x+1, y), (x+1, y-1), (x+1, y+1)]
+    elif x == numcols-1:
+        return [(x-1, y), (x, y-1), (x, y+1), (x-1, y+1), (x-1, y-1)]
+    elif y == numrows-1:
+        return [(x, y-1), (x-1, y), (x+1, y), (x-1, y-1), (x+1, y-1)]
+    elif y == 0:
+        return [(x-1, y), (x+1, y), (x, y+1), (x-1, y+1), (x+1, y+1)]
 
 
-def make_node_satisfied(unsatisfied_nodes_list, empty_cells):
+def make_node_satisfied(G, unsatisfied_nodes_list, empty_cells):
+    labels = dict((n, G.nodes[n]['type']) for n in G.nodes())
     if len(unsatisfied_nodes_list) != 0:
+        # choose from the random unsatisfied nodes
         node_to_shift = random.choice(unsatisfied_nodes_list)
+        # choose a random empty cell
         new_position = random.choice(empty_cells)
 
+        # move the unsatisfied node to the empty cell and switch values
         G.nodes[new_position]['type'] = G.nodes[node_to_shift]['type']
-        G.nodes[node_to_shift]['type'] = 0
+        # make the previous node empty
+        G.nodes[node_to_shift]['type'] = ' '
         labels[node_to_shift], labels[new_position] = labels[new_position], labels[node_to_shift]
     else:
         pass
 
 
-def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold):
+def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols):
+    """ returns the list of unsatisfied nodes """
     unsatisfied_nodes_list = []
     t = threshold
-    for (u, v) in G.nodes():
-        type_of_this_node = G.nodes[(u, v)]['type']
+    for (x, y) in G.nodes():
+        type_of_this_node = G.nodes[(x, y)]['type']
         if type_of_this_node == 0:
             continue
         else:
             similar_nodes = 0
-            if (u, v) in internal_nodes_list:
-                neighbors = get_neighbor_for_internal(u,v)
-            elif (u, v) in boundary_nodes_list:
-                neighbors = get_neighbor_for_boundary(u,v)
+            if (x, y) in internal_nodes_list:
+                neighbors = get_neighbor_for_internal(x, y)
+            elif (x, y) in boundary_nodes_list:
+                neighbors = get_neighbor_for_boundary(x, y, numrows, numcols)
 
             for each in neighbors:
                 if G.nodes[each]['type'] == type_of_this_node:
                     similar_nodes += 1
 
             if similar_nodes <= t:
-                unsatisfied_nodes_list.append((u,v))
+                unsatisfied_nodes_list.append((x, y))
 
     return unsatisfied_nodes_list
 
 
-# item 2
+# item 3
 def schelling_model(grid_source, threshold=3):
     """ Shows schelling model """
     numrows = len(grid_source)
@@ -123,7 +134,7 @@ def schelling_model(grid_source, threshold=3):
             G.add_edge((x, y), (x + 1, y - 1))
 
     # display initial graph
-    display_graph(G)
+    display_graph(G, 'Initial Grid (Please close to continue)')
 
     # get boundary and internal noder
     boundary_nodes_list = get_boundary_nodes(G, numrows, numcols)
@@ -133,14 +144,19 @@ def schelling_model(grid_source, threshold=3):
     # accuracy is based on the number of iterations
     for i in range(10000):
         # get list of unsatisfied not list first
-        unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list)
-        make_node_satisfied(unsatisfied_nodes_list, empty_cells)
+        unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols)
 
+        # move an unsatisfied node to an empty cell
+        logger.info("iteration : {}".format(i))
+        empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == ' ']
+        make_node_satisfied(G, unsatisfied_nodes_list, empty_cells)
     # display final graph
-    display_graph(G)
+    display_graph(G, 'Output Grid')
 
 
 if __name__ == '__main__':
+
+
     input_file = 'test.csv'
     grid = load_to_array(input_file)
 
