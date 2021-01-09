@@ -1,3 +1,5 @@
+import argparse
+
 import numpy as np
 import networkx as nx
 import csv
@@ -114,7 +116,7 @@ def get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, thre
 
 
 # item 3
-def schelling_model(grid_source, threshold=3):
+def schelling_model(grid_source, threshold, iterations):
     """ Shows schelling model """
     numrows = len(grid_source)
     numcols = len(grid_source[0])
@@ -142,23 +144,30 @@ def schelling_model(grid_source, threshold=3):
 
     # make calculations according to threshold
     # accuracy is based on the number of iterations
-    for i in range(10000):
+    logger.info("Starting Calculations")
+    for i in range(iterations):
         # get list of unsatisfied not list first
         unsatisfied_nodes_list = get_unsatisfied_nodes_list(G, internal_nodes_list, boundary_nodes_list, threshold, numrows, numcols)
-
+        logger.info("iteration: {}".format(i))
         # move an unsatisfied node to an empty cell
-        logger.info("iteration : {}".format(i))
         empty_cells = [n for (n, d) in G.nodes(data=True) if d['type'] == ' ']
         make_node_satisfied(G, unsatisfied_nodes_list, empty_cells)
     # display final graph
-    display_graph(G, 'Output Grid')
+    display_graph(G, 'Schelling model Implemented')
+    logger.info("Schelling model Complete")
 
 
 if __name__ == '__main__':
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_file", dest="input_file", type=str, required=True)
+    # threshold : default is 3 and iterations default is 1000
+    parser.add_argument("--t", dest='threshold', default=3, type=str)
+    parser.add_argument("--iter", dest='iterations', default=1000)
 
-    input_file = 'test.csv'
-    grid = load_to_array(input_file)
+    args = parser.parse_args()
 
+    grid = load_to_array(args.input_file)
+    print(grid)
     # show schelling model based on 2d grid
-    schelling_model(grid)
+    schelling_model(grid, args.threshold, args.iterations)
